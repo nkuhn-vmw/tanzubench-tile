@@ -1,0 +1,17 @@
+---
+name: export-results
+description: "Errand: export results as a downloadable JSON bundle for the central leaderboard"
+
+templates:
+  run.sh.erb: bin/run
+
+packages:
+  - tanzubench
+
+consumes: []
+provides: []
+
+properties:
+  tanzubench.export_enabled:
+    description: "Allow export"
+    default: true

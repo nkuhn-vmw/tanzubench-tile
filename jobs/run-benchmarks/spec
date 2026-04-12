@@ -1,0 +1,46 @@
+---
+name: run-benchmarks
+description: "Errand: run the TanzuBench suite against the configured model endpoint"
+
+templates:
+  run.sh.erb: bin/run
+
+packages:
+  - tanzubench
+  - python3
+
+consumes: []
+provides: []
+
+properties:
+  tanzubench.genai_endpoint:
+    description: "Model endpoint"
+  tanzubench.genai_model:
+    description: "Model name"
+  tanzubench.genai_engine:
+    description: "Engine type"
+    default: vllm
+  tanzubench.genai_api_key:
+    description: "API key"
+    default: ""
+  tanzubench.hardware_type:
+    description: "Hardware type"
+    default: gpu
+  tanzubench.task_timeout:
+    description: "Per-test timeout"
+    default: 0
+  tanzubench.suppress_thinking:
+    description: "Suppress reasoning tokens"
+    default: true
+  tanzubench.tile_version:
+    description: "GenAI tile version"
+    default: ""
+  tanzubench.judge_endpoint:
+    description: "Judge endpoint"
+    default: ""
+  tanzubench.judge_model:
+    description: "Judge model name"
+    default: ""
+  tanzubench.judge_api_key:
+    description: "Judge API key"
+    default: ""

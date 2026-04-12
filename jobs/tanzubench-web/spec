@@ -1,0 +1,50 @@
+---
+name: tanzubench-web
+description: "TanzuBench local leaderboard and benchmark runner web UI"
+
+templates:
+  bpm.yml.erb: config/bpm.yml
+  config.json.erb: config/config.json
+
+packages:
+  - tanzubench
+  - node20
+
+consumes: []
+provides: []
+
+properties:
+  tanzubench.genai_endpoint:
+    description: "OpenAI-compatible model endpoint URL"
+  tanzubench.genai_model:
+    description: "Model name"
+  tanzubench.genai_engine:
+    description: "Engine type: vllm or ollama"
+    default: vllm
+  tanzubench.genai_api_key:
+    description: "API key for model endpoint"
+    default: ""
+  tanzubench.hardware_type:
+    description: "Hardware type: cpu or gpu"
+    default: gpu
+  tanzubench.task_timeout:
+    description: "Per-test timeout override (0 = use YAML defaults)"
+    default: 0
+  tanzubench.suppress_thinking:
+    description: "Suppress reasoning tokens"
+    default: true
+  tanzubench.tile_version:
+    description: "GenAI tile version"
+    default: ""
+  tanzubench.judge_endpoint:
+    description: "Judge model endpoint"
+    default: ""
+  tanzubench.judge_model:
+    description: "Judge model name"
+    default: ""
+  tanzubench.judge_api_key:
+    description: "Judge API key"
+    default: ""
+  tanzubench.export_enabled:
+    description: "Allow result export"
+    default: true

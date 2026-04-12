@@ -1,0 +1,201 @@
+---
+name: tanzubench
+icon_file: resources/icon.png
+label: TanzuBench
+description: |
+  Open benchmark suite for LLMs running on the Tanzu GenAI tile.
+  99 tests across 18 categories measuring real-world model usability
+  on CPU and GPU foundations.
+metadata_version: "3.0"
+
+requires_product_versions:
+  - name: cf
+    version: "~> 4.0"
+
+stemcell_criteria:
+  os: ubuntu-jammy
+  version: "1.0"
+
+# ── Properties (OpsManager form fields) ────────────────────────────
+forms:
+  - name: benchmark_config
+    label: Benchmark Configuration
+    properties:
+      - name: genai_endpoint
+        type: string
+        label: GenAI Model Endpoint
+        description: "OpenAI-compatible /v1/chat/completions URL (e.g., http://127.0.0.1:4000)"
+        configurable: true
+      - name: genai_model
+        type: string
+        label: Model Name
+        description: "Model name as served by the endpoint"
+        configurable: true
+      - name: genai_engine
+        type: dropdown_select
+        label: Engine
+        options:
+          - name: vllm
+            label: vLLM
+          - name: ollama
+            label: Ollama
+        default: vllm
+        configurable: true
+      - name: genai_api_key
+        type: secret
+        label: API Key
+        description: "API key for the model endpoint (optional)"
+        configurable: true
+        optional: true
+      - name: hardware_type
+        type: dropdown_select
+        label: Hardware Type
+        options:
+          - name: gpu
+            label: GPU
+          - name: cpu
+            label: CPU
+        default: gpu
+        configurable: true
+      - name: task_timeout
+        type: integer
+        label: Per-test timeout (seconds)
+        description: "Override per-test timeout for CPU runs (0 = use YAML defaults)"
+        default: 0
+        configurable: true
+      - name: suppress_thinking
+        type: boolean
+        label: Suppress thinking tokens
+        description: "Enable for Gemma 4 / Qwen3 family models"
+        default: true
+        configurable: true
+      - name: tile_version_label
+        type: string
+        label: GenAI Tile Version
+        description: "Version of the GenAI tile being benchmarked (e.g., 10.3.4)"
+        configurable: true
+        optional: true
+
+  - name: judge_config
+    label: Judge Configuration
+    properties:
+      - name: judge_endpoint
+        type: string
+        label: Judge Model Endpoint
+        description: "OpenAI-compatible endpoint for the judge model (leave empty to skip judge-graded categories)"
+        configurable: true
+        optional: true
+      - name: judge_model
+        type: string
+        label: Judge Model Name
+        configurable: true
+        optional: true
+      - name: judge_api_key
+        type: secret
+        label: Judge API Key
+        configurable: true
+        optional: true
+
+  - name: leaderboard_config
+    label: Leaderboard
+    properties:
+      - name: leaderboard_route_prefix
+        type: string
+        label: Route Prefix
+        description: "URL prefix for the leaderboard (e.g., 'tanzubench')"
+        default: tanzubench
+        configurable: true
+      - name: export_enabled
+        type: boolean
+        label: Enable Result Export
+        description: "Allow exporting results for upload to the central TanzuBench leaderboard"
+        default: true
+        configurable: true
+
+# ── Packages (BOSH jobs + errands) ─────────────────────────────────
+packages:
+  - name: tanzubench
+    type: bosh-release
+    path: resources/tanzubench-release.tgz
+    jobs:
+      # Web UI — local leaderboard + run trigger
+      - name: tanzubench-web
+        templates:
+          - name: tanzubench-web
+            release: tanzubench
+          - name: route_registrar
+            release: routing
+            consumes:
+              nats-tls:
+                from: nats-tls
+                deployment: (( ..cf.deployment_name ))
+        properties:
+          route_registrar:
+            routes:
+              - name: tanzubench-web
+                port: 8080
+                registration_interval: 20s
+                uris:
+                  - (( .properties.leaderboard_route_prefix.value )).(( ..cf.cloud_controller.system_domain.value ))
+          tanzubench:
+            genai_endpoint: (( .properties.genai_endpoint.value ))
+            genai_model: (( .properties.genai_model.value ))
+            genai_engine: (( .properties.genai_engine.value ))
+            genai_api_key: (( .properties.genai_api_key.value ))
+            hardware_type: (( .properties.hardware_type.value ))
+            task_timeout: (( .properties.task_timeout.value ))
+            suppress_thinking: (( .properties.suppress_thinking.value ))
+            tile_version: (( .properties.tile_version_label.value ))
+            judge_endpoint: (( .properties.judge_endpoint.value ))
+            judge_model: (( .properties.judge_model.value ))
+            judge_api_key: (( .properties.judge_api_key.value ))
+            export_enabled: (( .properties.export_enabled.value ))
+
+      # Run benchmarks errand
+      - name: run-benchmarks
+        templates:
+          - name: run-benchmarks
+            release: tanzubench
+        lifecycle: errand
+        post_deploy: false
+        properties:
+          tanzubench:
+            genai_endpoint: (( .properties.genai_endpoint.value ))
+            genai_model: (( .properties.genai_model.value ))
+            genai_engine: (( .properties.genai_engine.value ))
+            genai_api_key: (( .properties.genai_api_key.value ))
+            hardware_type: (( .properties.hardware_type.value ))
+            task_timeout: (( .properties.task_timeout.value ))
+            suppress_thinking: (( .properties.suppress_thinking.value ))
+            tile_version: (( .properties.tile_version_label.value ))
+            judge_endpoint: (( .properties.judge_endpoint.value ))
+            judge_model: (( .properties.judge_model.value ))
+            judge_api_key: (( .properties.judge_api_key.value ))
+
+      # Export results errand
+      - name: export-results
+        templates:
+          - name: export-results
+            release: tanzubench
+        lifecycle: errand
+        post_deploy: false
+        properties:
+          tanzubench:
+            export_enabled: (( .properties.export_enabled.value ))
+
+      # Smoke tests
+      - name: smoke-tests
+        templates:
+          - name: smoke-tests
+            release: tanzubench
+        lifecycle: errand
+        post_deploy: true
+        properties:
+          tanzubench:
+            genai_endpoint: (( .properties.genai_endpoint.value ))
+            genai_model: (( .properties.genai_model.value ))
+            genai_api_key: (( .properties.genai_api_key.value ))
+
+# ── Additional releases bundled in the tile ────────────────────────
+runtime_configs: []
+additional_stemcells: []

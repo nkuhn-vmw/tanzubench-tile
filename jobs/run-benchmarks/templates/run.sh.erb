@@ -1,0 +1,54 @@
+#!/bin/bash
+set -euo pipefail
+
+export PATH="/var/vcap/packages/python3/bin:/var/vcap/packages/tanzubench/bin:$PATH"
+export PYTHONPATH="/var/vcap/packages/tanzubench"
+
+RESULTS_DIR="/var/vcap/store/tanzubench/results"
+mkdir -p "$RESULTS_DIR"
+
+ARGS=(
+  --url "<%= p('tanzubench.genai_endpoint') %>"
+  --model "<%= p('tanzubench.genai_model') %>"
+  --engine "<%= p('tanzubench.genai_engine') %>"
+  --foundation "<%= spec.deployment %>"
+  --hardware "<%= p('tanzubench.hardware_type') %>"
+  --output "$RESULTS_DIR/<%= p('tanzubench.hardware_type') %>/"
+  --max-run-time 7200
+  --no-interactive
+)
+
+<% if p('tanzubench.genai_api_key') != '' %>
+ARGS+=(--api-key "<%= p('tanzubench.genai_api_key') %>")
+<% end %>
+
+<% if p('tanzubench.task_timeout').to_i > 0 %>
+ARGS+=(--task-timeout "<%= p('tanzubench.task_timeout') %>")
+<% end %>
+
+<% if p('tanzubench.suppress_thinking') %>
+ARGS+=(--suppress-thinking)
+<% end %>
+
+<% if p('tanzubench.tile_version') != '' %>
+ARGS+=(--tile-version "<%= p('tanzubench.tile_version') %>")
+<% end %>
+
+<% if p('tanzubench.judge_endpoint') != '' %>
+ARGS+=(--judge-url "<%= p('tanzubench.judge_endpoint') %>")
+ARGS+=(--judge-model "<%= p('tanzubench.judge_model') %>")
+<% if p('tanzubench.judge_api_key') != '' %>
+ARGS+=(--judge-api-key "<%= p('tanzubench.judge_api_key') %>")
+<% end %>
+<% end %>
+
+echo "=== TanzuBench Run ==="
+echo "Model: <%= p('tanzubench.genai_model') %>"
+echo "Engine: <%= p('tanzubench.genai_engine') %>"
+echo "Hardware: <%= p('tanzubench.hardware_type') %>"
+echo "Foundation: <%= spec.deployment %>"
+echo "======================"
+
+python3 /var/vcap/packages/tanzubench/tools/bench_suite.py "${ARGS[@]}"
+
+echo "=== Run complete ==="

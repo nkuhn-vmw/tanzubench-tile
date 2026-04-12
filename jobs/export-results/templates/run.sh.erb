@@ -1,0 +1,24 @@
+#!/bin/bash
+set -euo pipefail
+
+<% unless p('tanzubench.export_enabled') %>
+echo "Export disabled in tile configuration"
+exit 0
+<% end %>
+
+RESULTS_DIR="/var/vcap/store/tanzubench/results"
+EXPORT_DIR="/var/vcap/store/tanzubench/exports"
+mkdir -p "$EXPORT_DIR"
+
+TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
+EXPORT_FILE="$EXPORT_DIR/tanzubench-export-${TIMESTAMP}.tar.gz"
+
+echo "Packaging results from $RESULTS_DIR..."
+tar -czf "$EXPORT_FILE" -C "$RESULTS_DIR" .
+echo "Export created: $EXPORT_FILE"
+echo "Size: $(du -h "$EXPORT_FILE" | cut -f1)"
+echo ""
+echo "To upload to the central leaderboard:"
+echo "  1. bosh scp <instance>:$EXPORT_FILE ./tanzubench-export.tar.gz"
+echo "  2. cd tanzubench && tar -xzf tanzubench-export.tar.gz -C results/"
+echo "  3. python3 tools/validate.py results/ && git add results/ && git push"

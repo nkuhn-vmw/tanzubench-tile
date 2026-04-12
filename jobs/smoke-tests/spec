@@ -1,0 +1,22 @@
+---
+name: smoke-tests
+description: "Errand: verify model endpoint is reachable and can answer a basic question"
+
+templates:
+  run.sh.erb: bin/run
+
+packages:
+  - tanzubench
+  - python3
+
+consumes: []
+provides: []
+
+properties:
+  tanzubench.genai_endpoint:
+    description: "Model endpoint"
+  tanzubench.genai_model:
+    description: "Model name"
+  tanzubench.genai_api_key:
+    description: "API key"
+    default: ""

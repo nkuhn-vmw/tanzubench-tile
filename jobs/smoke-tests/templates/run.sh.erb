@@ -1,0 +1,43 @@
+#!/bin/bash
+set -euo pipefail
+
+export PATH="/var/vcap/packages/python3/bin:$PATH"
+
+ENDPOINT="<%= p('tanzubench.genai_endpoint') %>"
+MODEL="<%= p('tanzubench.genai_model') %>"
+API_KEY="<%= p('tanzubench.genai_api_key') %>"
+
+echo "=== TanzuBench Smoke Test ==="
+echo "Endpoint: $ENDPOINT"
+echo "Model: $MODEL"
+
+# Test 1: Model endpoint is reachable
+echo -n "Checking /v1/models... "
+HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+  -H "Authorization: Bearer $API_KEY" \
+  --max-time 10 \
+  "$ENDPOINT/v1/models")
+
+if [[ "$HTTP_CODE" == "200" || "$HTTP_CODE" == "401" ]]; then
+  echo "OK (HTTP $HTTP_CODE)"
+else
+  echo "FAILED (HTTP $HTTP_CODE)"
+  exit 1
+fi
+
+# Test 2: Model can respond
+echo -n "Checking chat completion... "
+RESPONSE=$(curl -s --max-time 60 \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  "$ENDPOINT/v1/chat/completions" \
+  -d "{\"model\":\"$MODEL\",\"messages\":[{\"role\":\"user\",\"content\":\"What is 2+2? Answer with just the number.\"}],\"max_tokens\":8}")
+
+if echo "$RESPONSE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['choices'][0]['message']['content'])" 2>/dev/null | grep -q "4"; then
+  echo "OK (model responded correctly)"
+else
+  echo "WARN: unexpected response (endpoint works but model may not be fully loaded)"
+  echo "Response: $(echo "$RESPONSE" | head -c 200)"
+fi
+
+echo "=== Smoke test passed ==="

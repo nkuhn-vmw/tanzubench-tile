@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+
+# Copy the entire tanzubench suite
+cp -r tanzubench/* "${BOSH_INSTALL_TARGET}/"
+
+# The web UI is pre-built at tile build time and included as a static export
+# in tanzubench/web/out/. The server binary serves it.
+chmod +x "${BOSH_INSTALL_TARGET}/bin/tanzubench-server" 2>/dev/null || true

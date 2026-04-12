@@ -1,0 +1,16 @@
+{
+  "genai_endpoint": "<%= p('tanzubench.genai_endpoint') %>",
+  "genai_model": "<%= p('tanzubench.genai_model') %>",
+  "genai_engine": "<%= p('tanzubench.genai_engine') %>",
+  "genai_api_key": "<%= p('tanzubench.genai_api_key') %>",
+  "hardware_type": "<%= p('tanzubench.hardware_type') %>",
+  "task_timeout": <%= p('tanzubench.task_timeout') %>,
+  "suppress_thinking": <%= p('tanzubench.suppress_thinking') %>,
+  "tile_version": "<%= p('tanzubench.tile_version') %>",
+  "judge_endpoint": "<%= p('tanzubench.judge_endpoint') %>",
+  "judge_model": "<%= p('tanzubench.judge_model') %>",
+  "judge_api_key": "<%= p('tanzubench.judge_api_key') %>",
+  "export_enabled": <%= p('tanzubench.export_enabled') %>,
+  "results_dir": "/var/vcap/store/tanzubench/results",
+  "foundation": "<%= spec.deployment %>"
+}

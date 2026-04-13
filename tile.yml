@@ -262,6 +262,10 @@ packages:
             task_timeout: (( .properties.task_timeout.value ))
             suppress_thinking: (( .properties.suppress_thinking.value ))
             tile_version: (( .properties.tile_version_label.value ))
+            cf_system_domain: (( ..cf.cloud_controller.system_domain.value ))
+            cf_admin_user: (( ..cf.uaa.system_services_credentials.identity ))
+            cf_admin_password: (( ..cf.uaa.system_services_credentials.password ))
+            cf_skip_ssl: true
 
       # Export results errand
       - name: export-results

@@ -1,3 +1,27 @@
+cf-cli/cf8-cli-linux64.tgz:
+  size: 9588684
+  sha: sha256:d7f5f24eea21cd5d585b8504005ead5a67a2e6e3edddd5b51a3d1e70f595ba46
 golang/go1.22.12.linux-amd64.tar.gz:
   size: 68995422
   sha: sha256:4fa4f869b0f7fc6bb1eb2660e74657fbf04cdd290b5aef905585c86051b34d43
+python-deps/attrs-26.1.0-py3-none-any.whl:
+  size: 67548
+  sha: sha256:c647aa4a12dfbad9333ca4e71fe62ddc36f4e63b2d260a37a8b83d2f043ac309
+python-deps/jsonschema-4.26.0-py3-none-any.whl:
+  size: 90630
+  sha: sha256:d489f15263b8d200f8387e64b4c3a75f06629559fb73deb8fdfb525f2dab50ce
+python-deps/jsonschema_specifications-2025.9.1-py3-none-any.whl:
+  size: 18437
+  sha: sha256:98802fee3a11ee76ecaca44429fda8a41bff98b00a0f2838151b113f210cc6fe
+python-deps/pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl:
+  size: 770293
+  sha: sha256:9c7708761fccb9397fe64bbc0395abcae8c4bf7b0eac081e12b809bf47700d0b
+python-deps/referencing-0.37.0-py3-none-any.whl:
+  size: 26766
+  sha: sha256:381329a9f99628c9069361716891d34ad94af76e461dcb0335825aecc7692231
+python-deps/rpds_py-0.30.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl:
+  size: 390522
+  sha: sha256:0c0e95f6819a19965ff420f65578bacb0b00f251fefe2c8b23347c37174271f3
+python-deps/typing_extensions-4.15.0-py3-none-any.whl:
+  size: 44614
+  sha: sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548

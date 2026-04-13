@@ -3,10 +3,12 @@ name: run-benchmarks
 description: "Errand: run the TanzuBench suite against the configured model endpoint"
 
 templates:
+  pre-start.sh.erb: bin/pre-start
   run.sh.erb: bin/run
 
 packages:
   - tanzubench
+  - cf-cli
 
 consumes: []
 provides: []
@@ -78,3 +80,21 @@ properties:
   tanzubench.tile_version:
     description: "GenAI tile version"
     default: ""
+  tanzubench.cf_system_domain:
+    description: "CF system domain"
+    default: ""
+  tanzubench.cf_admin_user:
+    description: "CF admin user"
+    default: ""
+  tanzubench.cf_admin_password:
+    description: "CF admin password"
+    default: ""
+  tanzubench.genai_offering_name:
+    description: "GenAI offering name"
+    default: ""
+  tanzubench.genai_plan_name:
+    description: "GenAI plan name"
+    default: ""
+  tanzubench.cf_skip_ssl:
+    description: "Skip SSL validation for CF API"
+    default: true

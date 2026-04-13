@@ -10,6 +10,7 @@ templates:
 
 packages:
   - tanzubench
+  - cf-cli
 
 consumes: []
 provides: []

@@ -2,10 +2,12 @@
 set -euo pipefail
 
 export PYTHONPATH="/var/vcap/packages/tanzubench:/var/vcap/packages/tanzubench/python-lib"
+
+# Python deps installed at BOSH compile time into python-lib/
 export PATH="/var/vcap/packages/tanzubench/bin:$PATH"
 
 RESULTS_DIR="/var/vcap/store/tanzubench/results"
-CREDS_FILE="/var/vcap/jobs/tanzubench-web/config/genai-credentials.json"
+CREDS_FILE="/var/vcap/jobs/run-benchmarks/config/genai-credentials.json"
 
 # ── Resolve local foundation endpoint from marketplace creds ──────────
 LOCAL_ENDPOINT=""
@@ -13,7 +15,9 @@ LOCAL_API_KEY=""
 
 <% if p('tanzubench.genai_offering_name') != '' %>
 if [[ -f "$CREDS_FILE" ]]; then
-  LOCAL_ENDPOINT=$(python3 -c "import sys,json; d=json.load(open('$CREDS_FILE')); print(d.get('api_base',''))" 2>/dev/null || true)
+  # GenAI tile proxy uses /openai prefix: api_base/openai/v1/chat/completions
+  RAW_BASE=$(python3 -c "import sys,json; d=json.load(open('$CREDS_FILE')); print(d.get('api_base',''))" 2>/dev/null || true)
+  LOCAL_ENDPOINT="${RAW_BASE}/openai"
   LOCAL_API_KEY=$(python3  -c "import sys,json; d=json.load(open('$CREDS_FILE')); print(d.get('api_key',''))"  2>/dev/null || true)
 fi
 <% end %>

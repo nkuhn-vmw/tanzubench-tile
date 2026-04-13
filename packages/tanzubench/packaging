@@ -14,18 +14,24 @@ cd tanzubench-server
 go build -o "${BOSH_INSTALL_TARGET}/bin/tanzubench-server" .
 cd ..
 
-# Copy the benchmark suite (tools, tests, schema, pre-built web)
+# Copy the benchmark suite
 for dir in tools tests schema web; do
   if [ -d "tanzubench/$dir" ]; then
     cp -r "tanzubench/$dir" "${BOSH_INSTALL_TARGET}/$dir"
   fi
 done
 
-# Install Python deps for air-gap
+# Install vendored Python wheels (air-gap safe)
 mkdir -p "${BOSH_INSTALL_TARGET}/python-lib"
-if [ -d "tanzubench/python-deps" ]; then
-  pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
-    tanzubench/python-deps/*.whl tanzubench/python-deps/*.tar.gz 2>/dev/null || true
-fi
+pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
+  --no-index --find-links="${BOSH_COMPILE_TARGET}/python-deps" \
+  jsonschema pyyaml 2>&1 || {
+  echo "pip install from wheels failed, trying direct unzip..."
+  for whl in python-deps/*.whl; do
+    unzip -qo "$whl" -d "${BOSH_INSTALL_TARGET}/python-lib/" 2>/dev/null || true
+  done
+}
 
-echo "TanzuBench package installed to ${BOSH_INSTALL_TARGET}"
+echo "=== Python lib contents ==="
+ls "${BOSH_INSTALL_TARGET}/python-lib/" | head -20
+echo "=== Package complete ==="

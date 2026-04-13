@@ -5,3 +5,4 @@ dependencies:
 files:
   - tanzubench/**/*
   - tanzubench-server/**/*
+  - python-deps/*.whl

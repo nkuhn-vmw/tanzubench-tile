@@ -1,0 +1,5 @@
+#!/bin/bash
+set -euo pipefail
+mkdir -p "${BOSH_INSTALL_TARGET}/bin"
+tar -xzf cf-cli/cf8-cli-linux64.tgz -C "${BOSH_INSTALL_TARGET}/bin/"
+chmod +x "${BOSH_INSTALL_TARGET}/bin/cf" "${BOSH_INSTALL_TARGET}/bin/cf8" 2>/dev/null || true

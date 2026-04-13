@@ -3,7 +3,8 @@
 # Runs before monit starts tanzubench-web.
 set -euo pipefail
 
-CREDS_FILE="/var/vcap/jobs/tanzubench-web/config/genai-credentials.json"
+CREDS_FILE="/var/vcap/jobs/run-benchmarks/config/genai-credentials.json"
+mkdir -p "$(dirname $CREDS_FILE)"
 
 OFFERING="<%= p('tanzubench.genai_offering_name') %>"
 

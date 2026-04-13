@@ -65,6 +65,10 @@ func main() {
 	http.HandleFunc("/api/run", handleRun(cfg))
 	http.HandleFunc("/api/export", handleExport(cfg))
 
+	// Dashboard UI (run trigger + status)
+	http.HandleFunc("/dashboard", handleDashboard)
+	http.HandleFunc("/dashboard/", handleDashboard)
+
 	// Static files (the Next.js leaderboard)
 	fs := http.FileServer(http.Dir(cfg.StaticDir))
 	http.Handle("/", fs)

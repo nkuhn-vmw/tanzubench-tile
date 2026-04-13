@@ -12,19 +12,63 @@ consumes: []
 provides: []
 
 properties:
-  tanzubench.genai_endpoint:
-    description: "Model endpoint"
-  tanzubench.genai_model:
+  # Local foundation
+  tanzubench.genai_offering_name:
+    description: "CF marketplace service offering name"
+    default: ""
+  tanzubench.genai_plan_name:
+    description: "CF marketplace plan name"
+    default: ""
+  tanzubench.genai_model_name:
     description: "Model name"
+    default: ""
   tanzubench.genai_engine:
     description: "Engine type"
     default: vllm
-  tanzubench.genai_api_key:
-    description: "API key"
-    default: ""
   tanzubench.hardware_type:
     description: "Hardware type"
     default: gpu
+
+  # External foundation 1
+  tanzubench.ext_foundation_1_name:
+    description: "External foundation 1 display name"
+    default: ""
+  tanzubench.ext_foundation_1_endpoint:
+    description: "External foundation 1 endpoint URL"
+    default: ""
+  tanzubench.ext_foundation_1_api_key:
+    description: "External foundation 1 API key"
+    default: ""
+  tanzubench.ext_foundation_1_model:
+    description: "External foundation 1 model name"
+    default: ""
+  tanzubench.ext_foundation_1_hardware:
+    description: "External foundation 1 hardware type"
+    default: gpu
+
+  # External foundation 2
+  tanzubench.ext_foundation_2_name:
+    description: "External foundation 2 display name"
+    default: ""
+  tanzubench.ext_foundation_2_endpoint:
+    description: "External foundation 2 endpoint URL"
+    default: ""
+  tanzubench.ext_foundation_2_api_key:
+    description: "External foundation 2 API key"
+    default: ""
+  tanzubench.ext_foundation_2_model:
+    description: "External foundation 2 model name"
+    default: ""
+  tanzubench.ext_foundation_2_hardware:
+    description: "External foundation 2 hardware type"
+    default: gpu
+
+  # Judge
+  tanzubench.judge_source:
+    description: "Which foundation to use as judge"
+    default: none
+
+  # Runner settings
   tanzubench.task_timeout:
     description: "Per-test timeout"
     default: 0
@@ -33,13 +77,4 @@ properties:
     default: true
   tanzubench.tile_version:
     description: "GenAI tile version"
-    default: ""
-  tanzubench.judge_endpoint:
-    description: "Judge endpoint"
-    default: ""
-  tanzubench.judge_model:
-    description: "Judge model name"
-    default: ""
-  tanzubench.judge_api_key:
-    description: "Judge API key"
     default: ""

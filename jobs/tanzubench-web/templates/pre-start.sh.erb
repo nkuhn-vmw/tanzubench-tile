@@ -1,0 +1,75 @@
+#!/bin/bash
+# pre-start: bind to GenAI marketplace service and extract credentials
+# Runs before monit starts tanzubench-web.
+set -euo pipefail
+
+CREDS_FILE="/var/vcap/jobs/tanzubench-web/config/genai-credentials.json"
+
+OFFERING="<%= p('tanzubench.genai_offering_name') %>"
+
+if [[ -z "$OFFERING" ]]; then
+  echo "pre-start: genai_offering_name not set — skipping marketplace binding"
+  # Write an empty creds file so config.json.erb has a defined path to reference
+  echo '{"api_base":"","api_key":""}' > "$CREDS_FILE"
+  exit 0
+fi
+
+CF_API="<%= p('tanzubench.cf_api_url') %>"
+CF_USER="<%= p('tanzubench.cf_admin_user') %>"
+CF_PASS="<%= p('tanzubench.cf_admin_password') %>"
+CF_SKIP_SSL="<%= p('tanzubench.cf_skip_ssl') %>"
+PLAN="<%= p('tanzubench.genai_plan_name') %>"
+
+SERVICE_INSTANCE="tanzubench-genai"
+SERVICE_KEY="tanzubench-genai-key"
+
+echo "pre-start: authenticating with CF at $CF_API"
+
+CF_ARGS=()
+if [[ "$CF_SKIP_SSL" == "true" ]]; then
+  CF_ARGS+=(--skip-ssl-validation)
+fi
+
+cf api "$CF_API" "${CF_ARGS[@]}"
+cf auth "$CF_USER" "$CF_PASS"
+
+# Target the system org/space — tanzubench runs in system context
+cf target -o system -s tanzubench 2>/dev/null || {
+  cf create-space tanzubench -o system
+  cf target -o system -s tanzubench
+}
+
+echo "pre-start: creating service instance $SERVICE_INSTANCE ($OFFERING / $PLAN)"
+# Idempotent: ignore error if instance already exists
+cf create-service "$OFFERING" "$PLAN" "$SERVICE_INSTANCE" 2>/dev/null || true
+
+# Wait for service to be ready (max 60s)
+for i in $(seq 1 12); do
+  STATUS=$(cf service "$SERVICE_INSTANCE" | grep -E '^status:' | awk '{print $2}' || true)
+  if [[ "$STATUS" == "create" ]]; then
+    # "create succeeded" — grep gives us first word
+    DETAIL=$(cf service "$SERVICE_INSTANCE" | grep -E '^status:' | sed 's/^status: //')
+    if echo "$DETAIL" | grep -q "succeeded"; then
+      break
+    fi
+  fi
+  # Also accept if service key already usable
+  cf service-key "$SERVICE_INSTANCE" "$SERVICE_KEY" >/dev/null 2>&1 && break
+  echo "pre-start: waiting for service ($i/12)..."
+  sleep 5
+done
+
+echo "pre-start: creating service key $SERVICE_KEY"
+cf create-service-key "$SERVICE_INSTANCE" "$SERVICE_KEY" 2>/dev/null || true
+
+echo "pre-start: extracting credentials"
+KEY_JSON=$(cf service-key "$SERVICE_INSTANCE" "$SERVICE_KEY" | tail -n +3)
+
+API_BASE=$(echo "$KEY_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('url','') or d.get('api_base','') or d.get('endpoint',''))" 2>/dev/null || true)
+API_KEY=$(echo  "$KEY_JSON" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('api_key','') or d.get('token',''))" 2>/dev/null || true)
+
+cat > "$CREDS_FILE" <<EOF
+{"api_base":"${API_BASE}","api_key":"${API_KEY}"}
+EOF
+
+echo "pre-start: credentials written to $CREDS_FILE (api_base=${API_BASE})"

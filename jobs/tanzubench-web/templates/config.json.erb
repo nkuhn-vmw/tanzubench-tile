@@ -1,15 +1,33 @@
 {
-  "genai_endpoint": "<%= p('tanzubench.genai_endpoint') %>",
-  "genai_model": "<%= p('tanzubench.genai_model') %>",
-  "genai_engine": "<%= p('tanzubench.genai_engine') %>",
-  "genai_api_key": "<%= p('tanzubench.genai_api_key') %>",
-  "hardware_type": "<%= p('tanzubench.hardware_type') %>",
+  "local_foundation": {
+    "offering_name": "<%= p('tanzubench.genai_offering_name') %>",
+    "plan_name": "<%= p('tanzubench.genai_plan_name') %>",
+    "model_name": "<%= p('tanzubench.genai_model_name') %>",
+    "engine": "<%= p('tanzubench.genai_engine') %>",
+    "hardware_type": "<%= p('tanzubench.hardware_type') %>",
+    "credentials_file": "/var/vcap/jobs/tanzubench-web/config/genai-credentials.json"
+  },
+  "external_foundations": [
+    {
+      "name": "<%= p('tanzubench.ext_foundation_1_name') %>",
+      "endpoint": "<%= p('tanzubench.ext_foundation_1_endpoint') %>",
+      "api_key": "<%= p('tanzubench.ext_foundation_1_api_key') %>",
+      "model": "<%= p('tanzubench.ext_foundation_1_model') %>",
+      "hardware_type": "<%= p('tanzubench.ext_foundation_1_hardware') %>"
+    },
+    {
+      "name": "<%= p('tanzubench.ext_foundation_2_name') %>",
+      "endpoint": "<%= p('tanzubench.ext_foundation_2_endpoint') %>",
+      "api_key": "<%= p('tanzubench.ext_foundation_2_api_key') %>",
+      "model": "<%= p('tanzubench.ext_foundation_2_model') %>",
+      "hardware_type": "<%= p('tanzubench.ext_foundation_2_hardware') %>"
+    }
+  ],
+  "judge_source": "<%= p('tanzubench.judge_source') %>",
   "task_timeout": <%= p('tanzubench.task_timeout') %>,
   "suppress_thinking": <%= p('tanzubench.suppress_thinking') %>,
   "tile_version": "<%= p('tanzubench.tile_version') %>",
-  "judge_endpoint": "<%= p('tanzubench.judge_endpoint') %>",
-  "judge_model": "<%= p('tanzubench.judge_model') %>",
-  "judge_api_key": "<%= p('tanzubench.judge_api_key') %>",
+  "leaderboard_route_prefix": "<%= p('tanzubench.leaderboard_route_prefix') %>",
   "export_enabled": <%= p('tanzubench.export_enabled') %>,
   "results_dir": "/var/vcap/store/tanzubench/results",
   "foundation": "<%= spec.deployment %>"

@@ -1,9 +1,22 @@
 #!/bin/bash
 set -euo pipefail
 
-ENDPOINT="<%= p('tanzubench.genai_endpoint') %>"
-MODEL="<%= p('tanzubench.genai_model') %>"
-API_KEY="<%= p('tanzubench.genai_api_key') %>"
+CREDS_FILE="/var/vcap/jobs/tanzubench-web/config/genai-credentials.json"
+MODEL="<%= p('tanzubench.genai_model_name') %>"
+
+# Resolve endpoint from marketplace credentials written by pre-start
+ENDPOINT=""
+API_KEY=""
+
+if [[ -f "$CREDS_FILE" ]]; then
+  ENDPOINT=$(python3 -c "import sys,json; d=json.load(open('$CREDS_FILE')); print(d.get('api_base',''))" 2>/dev/null || true)
+  API_KEY=$(python3  -c "import sys,json; d=json.load(open('$CREDS_FILE')); print(d.get('api_key',''))"  2>/dev/null || true)
+fi
+
+if [[ -z "$ENDPOINT" ]]; then
+  echo "=== Smoke test SKIPPED: no endpoint resolved (creds file missing or empty) ==="
+  exit 0
+fi
 
 echo "=== TanzuBench Smoke Test ==="
 echo "Endpoint: $ENDPOINT"

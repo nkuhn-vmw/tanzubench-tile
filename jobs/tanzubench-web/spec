@@ -3,6 +3,7 @@ name: tanzubench-web
 description: "TanzuBench local leaderboard and benchmark runner web UI"
 
 templates:
+  pre-start.sh.erb: bin/pre-start
   start.sh.erb: bin/start.sh
   stop.sh.erb: bin/stop.sh
   config.json.erb: config/config.json
@@ -14,37 +15,89 @@ consumes: []
 provides: []
 
 properties:
-  tanzubench.genai_endpoint:
-    description: "OpenAI-compatible model endpoint URL"
-  tanzubench.genai_model:
-    description: "Model name"
-  tanzubench.genai_engine:
-    description: "Engine type"
-    default: vllm
-  tanzubench.genai_api_key:
-    description: "API key"
+  # Local foundation — marketplace binding
+  tanzubench.genai_offering_name:
+    description: "CF marketplace service offering name (e.g., 'tanzu-ai')"
     default: ""
+  tanzubench.genai_plan_name:
+    description: "CF marketplace plan name (e.g., 'all-models')"
+    default: ""
+  tanzubench.genai_model_name:
+    description: "Model name to benchmark"
+    default: ""
+  tanzubench.genai_engine:
+    description: "Engine type (vllm or ollama)"
+    default: vllm
   tanzubench.hardware_type:
-    description: "Hardware type"
+    description: "Hardware type (gpu or cpu)"
     default: gpu
+
+  # External foundation 1
+  tanzubench.ext_foundation_1_name:
+    description: "External foundation 1 display name"
+    default: ""
+  tanzubench.ext_foundation_1_endpoint:
+    description: "External foundation 1 OpenAI-compatible endpoint URL"
+    default: ""
+  tanzubench.ext_foundation_1_api_key:
+    description: "External foundation 1 API key"
+    default: ""
+  tanzubench.ext_foundation_1_model:
+    description: "External foundation 1 model name"
+    default: ""
+  tanzubench.ext_foundation_1_hardware:
+    description: "External foundation 1 hardware type"
+    default: gpu
+
+  # External foundation 2
+  tanzubench.ext_foundation_2_name:
+    description: "External foundation 2 display name"
+    default: ""
+  tanzubench.ext_foundation_2_endpoint:
+    description: "External foundation 2 OpenAI-compatible endpoint URL"
+    default: ""
+  tanzubench.ext_foundation_2_api_key:
+    description: "External foundation 2 API key"
+    default: ""
+  tanzubench.ext_foundation_2_model:
+    description: "External foundation 2 model name"
+    default: ""
+  tanzubench.ext_foundation_2_hardware:
+    description: "External foundation 2 hardware type"
+    default: gpu
+
+  # Judge
+  tanzubench.judge_source:
+    description: "Which foundation's model to use as judge (local/external_1/external_2/none)"
+    default: none
+
+  # Runner settings
   tanzubench.task_timeout:
-    description: "Per-test timeout override"
+    description: "Per-test timeout override (0 = use YAML defaults)"
     default: 0
   tanzubench.suppress_thinking:
-    description: "Suppress reasoning tokens"
+    description: "Suppress reasoning tokens (for Gemma 4 / Qwen3 family)"
     default: true
   tanzubench.tile_version:
-    description: "GenAI tile version"
+    description: "GenAI tile version being benchmarked"
     default: ""
-  tanzubench.judge_endpoint:
-    description: "Judge endpoint"
-    default: ""
-  tanzubench.judge_model:
-    description: "Judge model name"
-    default: ""
-  tanzubench.judge_api_key:
-    description: "Judge API key"
-    default: ""
+  tanzubench.leaderboard_route_prefix:
+    description: "URL prefix for the leaderboard"
+    default: tanzubench
   tanzubench.export_enabled:
-    description: "Allow result export"
+    description: "Allow result export to central leaderboard"
+    default: true
+
+  # CF credentials for marketplace binding
+  tanzubench.cf_api_url:
+    description: "CF API URL"
+    default: ""
+  tanzubench.cf_admin_user:
+    description: "CF admin username for marketplace binding"
+    default: ""
+  tanzubench.cf_admin_password:
+    description: "CF admin password for marketplace binding"
+    default: ""
+  tanzubench.cf_skip_ssl:
+    description: "Skip SSL validation for CF API calls"
     default: true

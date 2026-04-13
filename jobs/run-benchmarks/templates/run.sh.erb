@@ -5,54 +5,120 @@ export PYTHONPATH="/var/vcap/packages/tanzubench:/var/vcap/packages/tanzubench/p
 export PATH="/var/vcap/packages/tanzubench/bin:$PATH"
 
 RESULTS_DIR="/var/vcap/store/tanzubench/results"
-mkdir -p "$RESULTS_DIR/<%= p('tanzubench.hardware_type') %>"
+CREDS_FILE="/var/vcap/jobs/tanzubench-web/config/genai-credentials.json"
 
-ARGS=(
-  /var/vcap/packages/tanzubench/tools/bench_suite.py
-  --url "<%= p('tanzubench.genai_endpoint') %>"
-  --model "<%= p('tanzubench.genai_model') %>"
-  --engine "<%= p('tanzubench.genai_engine') %>"
-  --foundation "<%= spec.deployment %>"
-  --hardware "<%= p('tanzubench.hardware_type') %>"
-  --output "$RESULTS_DIR/<%= p('tanzubench.hardware_type') %>/"
-  --max-run-time 7200
-  --no-interactive
-)
+# ── Resolve local foundation endpoint from marketplace creds ──────────
+LOCAL_ENDPOINT=""
+LOCAL_API_KEY=""
 
-<% if p('tanzubench.genai_api_key') != '' %>
-ARGS+=(--api-key "<%= p('tanzubench.genai_api_key') %>")
+<% if p('tanzubench.genai_offering_name') != '' %>
+if [[ -f "$CREDS_FILE" ]]; then
+  LOCAL_ENDPOINT=$(python3 -c "import sys,json; d=json.load(open('$CREDS_FILE')); print(d.get('api_base',''))" 2>/dev/null || true)
+  LOCAL_API_KEY=$(python3  -c "import sys,json; d=json.load(open('$CREDS_FILE')); print(d.get('api_key',''))"  2>/dev/null || true)
+fi
 <% end %>
 
-<% if p('tanzubench.task_timeout').to_i > 0 %>
-ARGS+=(--task-timeout "<%= p('tanzubench.task_timeout') %>")
+HARDWARE="<%= p('tanzubench.hardware_type') %>"
+MODEL="<%= p('tanzubench.genai_model_name') %>"
+ENGINE="<%= p('tanzubench.genai_engine') %>"
+
+# ── Resolve judge endpoint from judge_source ──────────────────────────
+JUDGE_URL=""
+JUDGE_MODEL=""
+JUDGE_API_KEY=""
+
+<% case p('tanzubench.judge_source')
+   when 'local' %>
+JUDGE_URL="$LOCAL_ENDPOINT"
+JUDGE_MODEL="$MODEL"
+JUDGE_API_KEY="$LOCAL_API_KEY"
+<% when 'external_1' %>
+JUDGE_URL="<%= p('tanzubench.ext_foundation_1_endpoint') %>"
+JUDGE_MODEL="<%= p('tanzubench.ext_foundation_1_model') %>"
+JUDGE_API_KEY="<%= p('tanzubench.ext_foundation_1_api_key') %>"
+<% when 'external_2' %>
+JUDGE_URL="<%= p('tanzubench.ext_foundation_2_endpoint') %>"
+JUDGE_MODEL="<%= p('tanzubench.ext_foundation_2_model') %>"
+JUDGE_API_KEY="<%= p('tanzubench.ext_foundation_2_api_key') %>"
 <% end %>
 
-<% if p('tanzubench.suppress_thinking') %>
-ARGS+=(--suppress-thinking)
+# ── Helper: run bench suite for one target ───────────────────────────
+run_bench() {
+  local url="$1" model="$2" engine="$3" hw="$4" api_key="$5"
+
+  mkdir -p "$RESULTS_DIR/$hw"
+
+  local ARGS=(
+    /var/vcap/packages/tanzubench/tools/bench_suite.py
+    --url "$url"
+    --model "$model"
+    --engine "$engine"
+    --foundation "<%= spec.deployment %>"
+    --hardware "$hw"
+    --output "$RESULTS_DIR/$hw/"
+    --max-run-time 7200
+    --no-interactive
+  )
+
+  [[ -n "$api_key" ]]  && ARGS+=(--api-key "$api_key")
+
+  <% if p('tanzubench.task_timeout').to_i > 0 %>
+  ARGS+=(--task-timeout "<%= p('tanzubench.task_timeout') %>")
+  <% end %>
+
+  <% if p('tanzubench.suppress_thinking') %>
+  ARGS+=(--suppress-thinking)
+  <% end %>
+
+  <% if p('tanzubench.tile_version') != '' %>
+  ARGS+=(--tile-version "<%= p('tanzubench.tile_version') %>")
+  <% end %>
+
+  [[ -n "$JUDGE_URL"     ]] && ARGS+=(--judge-url "$JUDGE_URL")
+  [[ -n "$JUDGE_MODEL"   ]] && ARGS+=(--judge-model "$JUDGE_MODEL")
+  [[ -n "$JUDGE_API_KEY" ]] && ARGS+=(--judge-api-key "$JUDGE_API_KEY")
+
+  echo "=== TanzuBench Run ==="
+  echo "Model:     $model"
+  echo "Engine:    $engine"
+  echo "Hardware:  $hw"
+  echo "Foundation: <%= spec.deployment %>"
+  echo "Time:      $(date -u)"
+  echo "======================"
+
+  python3 "${ARGS[@]}"
+
+  echo ""
+  echo "=== Run complete at $(date -u) ==="
+  ls -la "$RESULTS_DIR/$hw/"
+}
+
+# ── Run local foundation if endpoint available ────────────────────────
+if [[ -n "$LOCAL_ENDPOINT" ]]; then
+  echo "--- Running local foundation benchmark ---"
+  run_bench "$LOCAL_ENDPOINT" "$MODEL" "$ENGINE" "$HARDWARE" "$LOCAL_API_KEY"
+else
+  echo "--- No local foundation endpoint resolved; skipping local benchmark ---"
+fi
+
+# ── Run external foundation 1 if configured ───────────────────────────
+<% if p('tanzubench.ext_foundation_1_endpoint') != '' %>
+echo "--- Running External Foundation 1: <%= p('tanzubench.ext_foundation_1_name') %> ---"
+run_bench \
+  "<%= p('tanzubench.ext_foundation_1_endpoint') %>" \
+  "<%= p('tanzubench.ext_foundation_1_model') %>" \
+  "vllm" \
+  "<%= p('tanzubench.ext_foundation_1_hardware') %>" \
+  "<%= p('tanzubench.ext_foundation_1_api_key') %>"
 <% end %>
 
-<% if p('tanzubench.tile_version') != '' %>
-ARGS+=(--tile-version "<%= p('tanzubench.tile_version') %>")
+# ── Run external foundation 2 if configured ───────────────────────────
+<% if p('tanzubench.ext_foundation_2_endpoint') != '' %>
+echo "--- Running External Foundation 2: <%= p('tanzubench.ext_foundation_2_name') %> ---"
+run_bench \
+  "<%= p('tanzubench.ext_foundation_2_endpoint') %>" \
+  "<%= p('tanzubench.ext_foundation_2_model') %>" \
+  "vllm" \
+  "<%= p('tanzubench.ext_foundation_2_hardware') %>" \
+  "<%= p('tanzubench.ext_foundation_2_api_key') %>"
 <% end %>
-
-<% if p('tanzubench.judge_endpoint') != '' %>
-ARGS+=(--judge-url "<%= p('tanzubench.judge_endpoint') %>")
-ARGS+=(--judge-model "<%= p('tanzubench.judge_model') %>")
-<% if p('tanzubench.judge_api_key') != '' %>
-ARGS+=(--judge-api-key "<%= p('tanzubench.judge_api_key') %>")
-<% end %>
-<% end %>
-
-echo "=== TanzuBench Run ==="
-echo "Model: <%= p('tanzubench.genai_model') %>"
-echo "Engine: <%= p('tanzubench.genai_engine') %>"
-echo "Hardware: <%= p('tanzubench.hardware_type') %>"
-echo "Foundation: <%= spec.deployment %>"
-echo "Time: $(date -u)"
-echo "======================"
-
-python3 "${ARGS[@]}"
-
-echo ""
-echo "=== Run complete at $(date -u) ==="
-ls -la "$RESULTS_DIR/<%= p('tanzubench.hardware_type') %>/"

@@ -18,18 +18,28 @@ stemcell_criteria:
 
 # ── Properties (OpsManager form fields) ────────────────────────────
 forms:
-  - name: benchmark_config
-    label: Benchmark Configuration
+  - name: genai_local
+    label: Local GenAI Service
+    description: Bind to the GenAI tile on this foundation via CF marketplace
     properties:
-      - name: genai_endpoint
+      - name: genai_offering_name
         type: string
-        label: GenAI Model Endpoint
-        description: "OpenAI-compatible /v1/chat/completions URL (e.g., http://127.0.0.1:4000)"
+        label: GenAI Offering Name
+        description: "Service offering name in CF marketplace (e.g., 'tanzu-ai')"
         configurable: true
-      - name: genai_model
+        default: ""
+        optional: true
+      - name: genai_plan_name
+        type: string
+        label: GenAI Plan Name
+        description: "Plan name (e.g., 'all-models')"
+        configurable: true
+        default: ""
+        optional: true
+      - name: genai_model_name
         type: string
         label: Model Name
-        description: "Model name as served by the endpoint"
+        description: "Model to benchmark (e.g., 'google/gemma-4-31B-it')"
         configurable: true
       - name: genai_engine
         type: dropdown_select
@@ -41,12 +51,6 @@ forms:
             label: Ollama
         default: vllm
         configurable: true
-      - name: genai_api_key
-        type: secret
-        label: API Key
-        description: "API key for the model endpoint (optional)"
-        configurable: true
-        optional: true
       - name: hardware_type
         type: dropdown_select
         label: Hardware Type
@@ -57,60 +61,133 @@ forms:
             label: CPU
         default: gpu
         configurable: true
+
+  - name: external_foundations
+    label: External Foundations
+    description: Configure endpoints on other foundations to benchmark
+    optional: true
+    properties:
+      - name: ext_foundation_1_name
+        type: string
+        label: Foundation 1 Name
+        default: ""
+        optional: true
+      - name: ext_foundation_1_endpoint
+        type: string
+        label: Foundation 1 Endpoint URL
+        default: ""
+        optional: true
+      - name: ext_foundation_1_api_key
+        type: secret
+        label: Foundation 1 API Key
+        optional: true
+      - name: ext_foundation_1_model
+        type: string
+        label: Foundation 1 Model Name
+        default: ""
+        optional: true
+      - name: ext_foundation_1_hardware
+        type: dropdown_select
+        label: Foundation 1 Hardware
+        options:
+          - name: gpu
+            label: GPU
+          - name: cpu
+            label: CPU
+        default: gpu
+      - name: ext_foundation_2_name
+        type: string
+        label: Foundation 2 Name
+        default: ""
+        optional: true
+      - name: ext_foundation_2_endpoint
+        type: string
+        label: Foundation 2 Endpoint URL
+        default: ""
+        optional: true
+      - name: ext_foundation_2_api_key
+        type: secret
+        label: Foundation 2 API Key
+        optional: true
+      - name: ext_foundation_2_model
+        type: string
+        label: Foundation 2 Model Name
+        default: ""
+        optional: true
+      - name: ext_foundation_2_hardware
+        type: dropdown_select
+        label: Foundation 2 Hardware
+        options:
+          - name: gpu
+            label: GPU
+          - name: cpu
+            label: CPU
+        default: gpu
+
+  - name: judge_config
+    label: Judge Configuration
+    description: Select which foundation's model serves as the LLM judge
+    properties:
+      - name: judge_source
+        type: dropdown_select
+        label: Judge Source
+        description: "Which foundation's model to use as judge"
+        options:
+          - name: local
+            label: Local Foundation
+          - name: external_1
+            label: External Foundation 1
+          - name: external_2
+            label: External Foundation 2
+          - name: none
+            label: No Judge (skip judge-graded categories)
+        default: none
+        configurable: true
+
+  - name: runner_settings
+    label: Runner Settings
+    properties:
       - name: task_timeout
         type: integer
         label: Per-test timeout (seconds)
-        description: "Override per-test timeout for CPU runs (0 = use YAML defaults)"
+        description: "0 = use defaults. Set to 120 for CPU models."
         default: 0
         configurable: true
       - name: suppress_thinking
         type: boolean
         label: Suppress thinking tokens
-        description: "Enable for Gemma 4 / Qwen3 family models"
         default: true
         configurable: true
       - name: tile_version_label
         type: string
         label: GenAI Tile Version
-        description: "Version of the GenAI tile being benchmarked (e.g., 10.3.4)"
-        configurable: true
         optional: true
-
-  - name: judge_config
-    label: Judge Configuration
-    properties:
-      - name: judge_endpoint
-        type: string
-        label: Judge Model Endpoint
-        description: "OpenAI-compatible endpoint for the judge model (leave empty to skip judge-graded categories)"
         configurable: true
-        optional: true
-      - name: judge_model
-        type: string
-        label: Judge Model Name
-        configurable: true
-        optional: true
-      - name: judge_api_key
-        type: secret
-        label: Judge API Key
-        configurable: true
-        optional: true
-
-  - name: leaderboard_config
-    label: Leaderboard
-    properties:
       - name: leaderboard_route_prefix
         type: string
-        label: Route Prefix
-        description: "URL prefix for the leaderboard (e.g., 'tanzubench')"
+        label: Leaderboard Route Prefix
         default: tanzubench
         configurable: true
       - name: export_enabled
         type: boolean
         label: Enable Result Export
-        description: "Allow exporting results for upload to the central TanzuBench leaderboard"
         default: true
         configurable: true
+
+# ── CF accessor properties ──────────────────────────────────────────
+property_blueprints:
+  - name: cf_api_url
+    type: string
+    configurable: false
+  - name: cf_admin_user
+    type: string
+    configurable: false
+  - name: cf_admin_password
+    type: secret
+    configurable: false
+  - name: cf_skip_ssl
+    type: boolean
+    configurable: false
 
 # ── Packages (BOSH jobs + errands) ─────────────────────────────────
 packages:
@@ -125,18 +202,37 @@ packages:
             release: tanzubench
         properties:
           tanzubench:
-            genai_endpoint: (( .properties.genai_endpoint.value ))
-            genai_model: (( .properties.genai_model.value ))
+            # Local foundation — marketplace binding
+            genai_offering_name: (( .properties.genai_offering_name.value ))
+            genai_plan_name: (( .properties.genai_plan_name.value ))
+            genai_model_name: (( .properties.genai_model_name.value ))
             genai_engine: (( .properties.genai_engine.value ))
-            genai_api_key: (( .properties.genai_api_key.value ))
             hardware_type: (( .properties.hardware_type.value ))
+            # External foundation 1
+            ext_foundation_1_name: (( .properties.ext_foundation_1_name.value ))
+            ext_foundation_1_endpoint: (( .properties.ext_foundation_1_endpoint.value ))
+            ext_foundation_1_api_key: (( .properties.ext_foundation_1_api_key.value ))
+            ext_foundation_1_model: (( .properties.ext_foundation_1_model.value ))
+            ext_foundation_1_hardware: (( .properties.ext_foundation_1_hardware.value ))
+            # External foundation 2
+            ext_foundation_2_name: (( .properties.ext_foundation_2_name.value ))
+            ext_foundation_2_endpoint: (( .properties.ext_foundation_2_endpoint.value ))
+            ext_foundation_2_api_key: (( .properties.ext_foundation_2_api_key.value ))
+            ext_foundation_2_model: (( .properties.ext_foundation_2_model.value ))
+            ext_foundation_2_hardware: (( .properties.ext_foundation_2_hardware.value ))
+            # Judge
+            judge_source: (( .properties.judge_source.value ))
+            # Runner settings
             task_timeout: (( .properties.task_timeout.value ))
             suppress_thinking: (( .properties.suppress_thinking.value ))
             tile_version: (( .properties.tile_version_label.value ))
-            judge_endpoint: (( .properties.judge_endpoint.value ))
-            judge_model: (( .properties.judge_model.value ))
-            judge_api_key: (( .properties.judge_api_key.value ))
+            leaderboard_route_prefix: (( .properties.leaderboard_route_prefix.value ))
             export_enabled: (( .properties.export_enabled.value ))
+            # CF credentials for marketplace binding
+            cf_api_url: (( "https://api." + ..cf.cloud_controller.system_domain.value ))
+            cf_admin_user: (( ..cf.uaa.system_services_credentials.identity ))
+            cf_admin_password: (( ..cf.uaa.system_services_credentials.password ))
+            cf_skip_ssl: true
 
       # Run benchmarks errand
       - name: run-benchmarks
@@ -147,17 +243,25 @@ packages:
         post_deploy: false
         properties:
           tanzubench:
-            genai_endpoint: (( .properties.genai_endpoint.value ))
-            genai_model: (( .properties.genai_model.value ))
+            genai_offering_name: (( .properties.genai_offering_name.value ))
+            genai_plan_name: (( .properties.genai_plan_name.value ))
+            genai_model_name: (( .properties.genai_model_name.value ))
             genai_engine: (( .properties.genai_engine.value ))
-            genai_api_key: (( .properties.genai_api_key.value ))
             hardware_type: (( .properties.hardware_type.value ))
+            ext_foundation_1_name: (( .properties.ext_foundation_1_name.value ))
+            ext_foundation_1_endpoint: (( .properties.ext_foundation_1_endpoint.value ))
+            ext_foundation_1_api_key: (( .properties.ext_foundation_1_api_key.value ))
+            ext_foundation_1_model: (( .properties.ext_foundation_1_model.value ))
+            ext_foundation_1_hardware: (( .properties.ext_foundation_1_hardware.value ))
+            ext_foundation_2_name: (( .properties.ext_foundation_2_name.value ))
+            ext_foundation_2_endpoint: (( .properties.ext_foundation_2_endpoint.value ))
+            ext_foundation_2_api_key: (( .properties.ext_foundation_2_api_key.value ))
+            ext_foundation_2_model: (( .properties.ext_foundation_2_model.value ))
+            ext_foundation_2_hardware: (( .properties.ext_foundation_2_hardware.value ))
+            judge_source: (( .properties.judge_source.value ))
             task_timeout: (( .properties.task_timeout.value ))
             suppress_thinking: (( .properties.suppress_thinking.value ))
             tile_version: (( .properties.tile_version_label.value ))
-            judge_endpoint: (( .properties.judge_endpoint.value ))
-            judge_model: (( .properties.judge_model.value ))
-            judge_api_key: (( .properties.judge_api_key.value ))
 
       # Export results errand
       - name: export-results
@@ -179,9 +283,12 @@ packages:
         post_deploy: true
         properties:
           tanzubench:
-            genai_endpoint: (( .properties.genai_endpoint.value ))
-            genai_model: (( .properties.genai_model.value ))
-            genai_api_key: (( .properties.genai_api_key.value ))
+            genai_offering_name: (( .properties.genai_offering_name.value ))
+            genai_model_name: (( .properties.genai_model_name.value ))
+            cf_api_url: (( "https://api." + ..cf.cloud_controller.system_domain.value ))
+            cf_admin_user: (( ..cf.uaa.system_services_credentials.identity ))
+            cf_admin_password: (( ..cf.uaa.system_services_credentials.password ))
+            cf_skip_ssl: true
 
 
 # routing release removed for MVP — gorouter integration is a follow-up

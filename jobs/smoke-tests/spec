@@ -1,13 +1,12 @@
 ---
 name: smoke-tests
-description: "Errand: verify model endpoint is reachable and can answer a basic question"
+description: "Errand: verify model endpoint is reachable and responds"
 
 templates:
   run.sh.erb: bin/run
 
 packages:
   - tanzubench
-  - python3
 
 consumes: []
 provides: []

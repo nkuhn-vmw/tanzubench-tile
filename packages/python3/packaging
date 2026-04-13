@@ -1,3 +1,0 @@
-#!/bin/bash
-set -euo pipefail
-tar -xzf python3/cpython-*.tar.gz -C "${BOSH_INSTALL_TARGET}/"

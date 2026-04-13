@@ -1,4 +1,0 @@
----
-name: python3
-files:
-  - python3/cpython-*.tar.gz

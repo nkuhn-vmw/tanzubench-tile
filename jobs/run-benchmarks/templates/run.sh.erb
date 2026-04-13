@@ -1,13 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-export PATH="/var/vcap/packages/python3/bin:/var/vcap/packages/tanzubench/bin:$PATH"
-export PYTHONPATH="/var/vcap/packages/tanzubench"
+export PYTHONPATH="/var/vcap/packages/tanzubench:/var/vcap/packages/tanzubench/python-lib"
+export PATH="/var/vcap/packages/tanzubench/bin:$PATH"
 
 RESULTS_DIR="/var/vcap/store/tanzubench/results"
-mkdir -p "$RESULTS_DIR"
+mkdir -p "$RESULTS_DIR/<%= p('tanzubench.hardware_type') %>"
 
 ARGS=(
+  /var/vcap/packages/tanzubench/tools/bench_suite.py
   --url "<%= p('tanzubench.genai_endpoint') %>"
   --model "<%= p('tanzubench.genai_model') %>"
   --engine "<%= p('tanzubench.genai_engine') %>"
@@ -47,8 +48,11 @@ echo "Model: <%= p('tanzubench.genai_model') %>"
 echo "Engine: <%= p('tanzubench.genai_engine') %>"
 echo "Hardware: <%= p('tanzubench.hardware_type') %>"
 echo "Foundation: <%= spec.deployment %>"
+echo "Time: $(date -u)"
 echo "======================"
 
-python3 /var/vcap/packages/tanzubench/tools/bench_suite.py "${ARGS[@]}"
+python3 "${ARGS[@]}"
 
-echo "=== Run complete ==="
+echo ""
+echo "=== Run complete at $(date -u) ==="
+ls -la "$RESULTS_DIR/<%= p('tanzubench.hardware_type') %>/"

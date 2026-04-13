@@ -3,12 +3,30 @@ set -euo pipefail
 
 # Build the Go server
 export GOROOT="/var/vcap/packages/golang-1.22"
-export GOPATH="${BOSH_INSTALL_TARGET}/go"
 export PATH="${GOROOT}/bin:${PATH}"
+export GOPATH="${BOSH_COMPILE_TARGET}/gopath"
 
 mkdir -p "${BOSH_INSTALL_TARGET}/bin"
 cd tanzubench-server
-GOFLAGS=-mod=mod go build -o "${BOSH_INSTALL_TARGET}/bin/tanzubench-server" .
+go build -o "${BOSH_INSTALL_TARGET}/bin/tanzubench-server" .
+cd ..
 
-# Copy the benchmark suite
-cp -r tanzubench/* "${BOSH_INSTALL_TARGET}/"
+# Copy the benchmark suite (tools, tests, schema, pre-built web)
+for dir in tools tests schema web; do
+  if [ -d "tanzubench/$dir" ]; then
+    cp -r "tanzubench/$dir" "${BOSH_INSTALL_TARGET}/$dir"
+  fi
+done
+
+# Install Python deps into a local lib directory
+# (stemcell has Python 3.10 but not jsonschema/pyyaml)
+mkdir -p "${BOSH_INSTALL_TARGET}/python-lib"
+if [ -d "tanzubench/python-deps" ]; then
+  pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
+    tanzubench/python-deps/*.whl tanzubench/python-deps/*.tar.gz 2>/dev/null || \
+  pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
+    jsonschema pyyaml 2>/dev/null || true
+fi
+
+echo "TanzuBench package installed to ${BOSH_INSTALL_TARGET}"
+ls -la "${BOSH_INSTALL_TARGET}/"

@@ -6,7 +6,7 @@ description: |
   Open benchmark suite for LLMs running on the Tanzu GenAI tile.
   99 tests across 18 categories measuring real-world model usability
   on CPU and GPU foundations.
-metadata_version: "3.0"
+metadata_version: 3.0
 
 requires_product_versions:
   - name: cf

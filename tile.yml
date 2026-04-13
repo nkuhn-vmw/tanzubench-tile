@@ -123,22 +123,7 @@ packages:
         templates:
           - name: tanzubench-web
             release: tanzubench
-          - name: bpm
-            release: bpm
-          - name: route_registrar
-            release: routing
-            consumes:
-              nats-tls:
-                from: nats-tls
-                deployment: (( ..cf.deployment_name ))
         properties:
-          route_registrar:
-            routes:
-              - name: tanzubench-web
-                port: 8080
-                registration_interval: 20s
-                uris:
-                  - (( .properties.leaderboard_route_prefix.value )).(( ..cf.cloud_controller.system_domain.value ))
           tanzubench:
             genai_endpoint: (( .properties.genai_endpoint.value ))
             genai_model: (( .properties.genai_model.value ))
@@ -198,10 +183,5 @@ packages:
             genai_model: (( .properties.genai_model.value ))
             genai_api_key: (( .properties.genai_api_key.value ))
 
-  - name: bpm
-    type: bosh-release
-    path: resources/bpm-release.tgz
 
-  - name: routing
-    type: bosh-release
-    path: resources/routing-release.tgz
+# routing release removed for MVP — gorouter integration is a follow-up

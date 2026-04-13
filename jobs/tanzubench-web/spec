@@ -3,7 +3,8 @@ name: tanzubench-web
 description: "TanzuBench local leaderboard and benchmark runner web UI"
 
 templates:
-  bpm.yml.erb: config/bpm.yml
+  start.sh.erb: bin/start.sh
+  stop.sh.erb: bin/stop.sh
   config.json.erb: config/config.json
 
 packages:

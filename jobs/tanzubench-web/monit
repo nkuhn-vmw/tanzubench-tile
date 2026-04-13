@@ -1,0 +1,5 @@
+check process tanzubench-web
+  with pidfile /var/vcap/sys/run/tanzubench-web/tanzubench-web.pid
+  start program "/var/vcap/jobs/tanzubench-web/bin/start.sh"
+  stop program "/var/vcap/jobs/tanzubench-web/bin/stop.sh"
+  group vcap

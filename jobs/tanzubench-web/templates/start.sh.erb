@@ -1,0 +1,19 @@
+#!/bin/bash
+set -euo pipefail
+
+RUN_DIR="/var/vcap/sys/run/tanzubench-web"
+LOG_DIR="/var/vcap/sys/log/tanzubench-web"
+STORE_DIR="/var/vcap/store/tanzubench"
+PIDFILE="${RUN_DIR}/tanzubench-web.pid"
+
+mkdir -p "$RUN_DIR" "$LOG_DIR" "$STORE_DIR/results"
+
+exec /var/vcap/packages/tanzubench/bin/tanzubench-server \
+  --config /var/vcap/jobs/tanzubench-web/config/config.json \
+  --port 8080 \
+  --results-dir "$STORE_DIR/results" \
+  --static-dir /var/vcap/packages/tanzubench/web/out \
+  >> "$LOG_DIR/tanzubench-web.stdout.log" \
+  2>> "$LOG_DIR/tanzubench-web.stderr.log" &
+
+echo $! > "$PIDFILE"

@@ -1,0 +1,6 @@
+#!/bin/bash
+PIDFILE="/var/vcap/sys/run/tanzubench-web/tanzubench-web.pid"
+if [ -f "$PIDFILE" ]; then
+  kill $(cat "$PIDFILE") 2>/dev/null || true
+  rm -f "$PIDFILE"
+fi

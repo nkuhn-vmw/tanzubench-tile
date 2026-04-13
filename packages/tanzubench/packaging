@@ -5,8 +5,11 @@ set -euo pipefail
 export GOROOT="/var/vcap/packages/golang-1.22"
 export PATH="${GOROOT}/bin:${PATH}"
 export GOPATH="${BOSH_COMPILE_TARGET}/gopath"
+export GOCACHE="${BOSH_COMPILE_TARGET}/gocache"
+export HOME="${BOSH_COMPILE_TARGET}"
 
-mkdir -p "${BOSH_INSTALL_TARGET}/bin"
+mkdir -p "${BOSH_INSTALL_TARGET}/bin" "${GOCACHE}"
+
 cd tanzubench-server
 go build -o "${BOSH_INSTALL_TARGET}/bin/tanzubench-server" .
 cd ..
@@ -18,15 +21,11 @@ for dir in tools tests schema web; do
   fi
 done
 
-# Install Python deps into a local lib directory
-# (stemcell has Python 3.10 but not jsonschema/pyyaml)
+# Install Python deps for air-gap
 mkdir -p "${BOSH_INSTALL_TARGET}/python-lib"
 if [ -d "tanzubench/python-deps" ]; then
   pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
-    tanzubench/python-deps/*.whl tanzubench/python-deps/*.tar.gz 2>/dev/null || \
-  pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
-    jsonschema pyyaml 2>/dev/null || true
+    tanzubench/python-deps/*.whl tanzubench/python-deps/*.tar.gz 2>/dev/null || true
 fi
 
 echo "TanzuBench package installed to ${BOSH_INSTALL_TARGET}"
-ls -la "${BOSH_INSTALL_TARGET}/"

@@ -7,7 +7,6 @@ export PATH="${GOROOT}/bin:${PATH}"
 export GOPATH="${BOSH_COMPILE_TARGET}/gopath"
 export GOCACHE="${BOSH_COMPILE_TARGET}/gocache"
 export HOME="${BOSH_COMPILE_TARGET}"
-
 mkdir -p "${BOSH_INSTALL_TARGET}/bin" "${GOCACHE}"
 
 cd tanzubench-server
@@ -21,17 +20,41 @@ for dir in tools tests schema web; do
   fi
 done
 
-# Install vendored Python wheels (air-gap safe)
+# Install Python deps from vendored wheels (air-gap safe)
 mkdir -p "${BOSH_INSTALL_TARGET}/python-lib"
+
+# Core deps (jsonschema, pyyaml)
 pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
   --no-index --find-links="${BOSH_COMPILE_TARGET}/python-deps" \
   jsonschema pyyaml 2>&1 || {
-  echo "pip install from wheels failed, trying direct unzip..."
+  echo "pip from wheels failed, trying direct unzip..."
   for whl in python-deps/*.whl; do
     unzip -qo "$whl" -d "${BOSH_INSTALL_TARGET}/python-lib/" 2>/dev/null || true
   done
 }
 
-echo "=== Python lib contents ==="
+# aider + all dependencies
+mkdir -p /tmp/aider-wheels
+tar xzf aider/aider-wheels.tar.gz -C /tmp/aider-wheels/
+pip3 install --target="${BOSH_INSTALL_TARGET}/python-lib" \
+  --no-index --find-links="/tmp/aider-wheels" \
+  aider-chat 2>&1 || {
+  echo "aider pip install from wheels failed, trying direct unzip..."
+  for whl in /tmp/aider-wheels/*.whl; do
+    unzip -qo "$whl" -d "${BOSH_INSTALL_TARGET}/python-lib/" 2>/dev/null || true
+  done
+}
+
+# Create aider wrapper script that uses the vendored install
+cat > "${BOSH_INSTALL_TARGET}/bin/aider" <<'AIDER'
+#!/bin/bash
+export PYTHONPATH="/var/vcap/packages/tanzubench/python-lib:${PYTHONPATH:-}"
+exec python3 -m aider.main "$@"
+AIDER
+chmod +x "${BOSH_INSTALL_TARGET}/bin/aider"
+
+echo "=== Python lib contents (sample) ==="
 ls "${BOSH_INSTALL_TARGET}/python-lib/" | head -20
+echo "=== aider wrapper ==="
+cat "${BOSH_INSTALL_TARGET}/bin/aider"
 echo "=== Package complete ==="

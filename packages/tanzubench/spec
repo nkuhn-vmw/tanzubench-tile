@@ -6,3 +6,4 @@ files:
   - tanzubench/**/*
   - tanzubench-server/**/*
   - python-deps/*.whl
+  - aider/aider-wheels.tar.gz

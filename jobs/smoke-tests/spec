@@ -18,7 +18,7 @@ properties:
   tanzubench.genai_model_name:
     description: "Model name"
     default: ""
-  tanzubench.cf_api_url:
+  tanzubench.cf_system_domain:
     description: "CF API URL"
     default: ""
   tanzubench.cf_admin_user:

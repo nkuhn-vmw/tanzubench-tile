@@ -14,7 +14,7 @@ if [[ -z "$OFFERING" ]]; then
   exit 0
 fi
 
-CF_API="<%= p('tanzubench.cf_api_url') %>"
+CF_API="https://api.<%= p('tanzubench.cf_system_domain') %>"
 CF_USER="<%= p('tanzubench.cf_admin_user') %>"
 CF_PASS="<%= p('tanzubench.cf_admin_password') %>"
 CF_SKIP_SSL="<%= p('tanzubench.cf_skip_ssl') %>"
@@ -22,6 +22,15 @@ PLAN="<%= p('tanzubench.genai_plan_name') %>"
 
 SERVICE_INSTANCE="tanzubench-genai"
 SERVICE_KEY="tanzubench-genai-key"
+
+# Check if cf CLI is available
+if ! command -v cf &>/dev/null && ! [ -x /var/vcap/packages/cf-cli/bin/cf ]; then
+  echo "pre-start: cf CLI not available — skipping marketplace binding"
+  echo "  To enable marketplace binding, add cf-cli package to the tile"
+  echo '{"api_base":"","api_key":""}' > "$CREDS_FILE"
+  exit 0
+fi
+export PATH="/var/vcap/packages/cf-cli/bin:$PATH"
 
 echo "pre-start: authenticating with CF at $CF_API"
 

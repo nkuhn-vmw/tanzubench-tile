@@ -6,3 +6,5 @@ resources/*.tgz
 *.pivotal
 .DS_Store
 node_modules/
+src/tanzubench/
+src/tanzubench-server/vendor/

@@ -1,4 +1,7 @@
 ---
 name: tanzubench
+dependencies:
+  - golang-1.22
 files:
   - tanzubench/**/*
+  - tanzubench-server/**/*

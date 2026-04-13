@@ -1,9 +1,14 @@
 #!/bin/bash
 set -euo pipefail
 
-# Copy the entire tanzubench suite
-cp -r tanzubench/* "${BOSH_INSTALL_TARGET}/"
+# Build the Go server
+export GOROOT="/var/vcap/packages/golang-1.22"
+export GOPATH="${BOSH_INSTALL_TARGET}/go"
+export PATH="${GOROOT}/bin:${PATH}"
 
-# The web UI is pre-built at tile build time and included as a static export
-# in tanzubench/web/out/. The server binary serves it.
-chmod +x "${BOSH_INSTALL_TARGET}/bin/tanzubench-server" 2>/dev/null || true
+mkdir -p "${BOSH_INSTALL_TARGET}/bin"
+cd tanzubench-server
+GOFLAGS=-mod=mod go build -o "${BOSH_INSTALL_TARGET}/bin/tanzubench-server" .
+
+# Copy the benchmark suite
+cp -r tanzubench/* "${BOSH_INSTALL_TARGET}/"

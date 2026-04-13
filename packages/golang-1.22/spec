@@ -1,0 +1,4 @@
+---
+name: golang-1.22
+files:
+  - golang/go*.linux-amd64.tar.gz

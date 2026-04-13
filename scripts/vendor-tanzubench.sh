@@ -26,6 +26,11 @@ mkdir -p "$TARGET/web"
 cp -r "$BENCH_REPO/web/out" "$TARGET/web/out"
 
 # Vendor Python deps (jsonschema, pyyaml) for air-gap
+# Strip opencode from agentic frameworks (no Linux CLI binary for air-gap)
+find "$TARGET/tests/agentic" -name "*.yaml" -exec sed -i.bak "s/frameworks: \[opencode, aider, custom\]/frameworks: [aider, custom]/" {} \;
+find "$TARGET/tests/agentic" -name "*.bak" -delete
+echo "Stripped opencode from agentic frameworks"
+
 echo "Vendoring Python dependencies..."
 pip download jsonschema pyyaml -d "$TARGET/python-deps/" --no-deps 2>/dev/null || true
 

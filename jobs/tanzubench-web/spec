@@ -8,7 +8,6 @@ templates:
 
 packages:
   - tanzubench
-  - node20
 
 consumes: []
 provides: []
@@ -19,16 +18,16 @@ properties:
   tanzubench.genai_model:
     description: "Model name"
   tanzubench.genai_engine:
-    description: "Engine type: vllm or ollama"
+    description: "Engine type"
     default: vllm
   tanzubench.genai_api_key:
-    description: "API key for model endpoint"
+    description: "API key"
     default: ""
   tanzubench.hardware_type:
-    description: "Hardware type: cpu or gpu"
+    description: "Hardware type"
     default: gpu
   tanzubench.task_timeout:
-    description: "Per-test timeout override (0 = use YAML defaults)"
+    description: "Per-test timeout override"
     default: 0
   tanzubench.suppress_thinking:
     description: "Suppress reasoning tokens"
@@ -37,7 +36,7 @@ properties:
     description: "GenAI tile version"
     default: ""
   tanzubench.judge_endpoint:
-    description: "Judge model endpoint"
+    description: "Judge endpoint"
     default: ""
   tanzubench.judge_model:
     description: "Judge model name"

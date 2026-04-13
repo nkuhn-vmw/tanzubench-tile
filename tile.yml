@@ -123,6 +123,8 @@ packages:
         templates:
           - name: tanzubench-web
             release: tanzubench
+          - name: bpm
+            release: bpm
           - name: route_registrar
             release: routing
             consumes:
@@ -196,6 +198,10 @@ packages:
             genai_model: (( .properties.genai_model.value ))
             genai_api_key: (( .properties.genai_api_key.value ))
 
-# ── Additional releases bundled in the tile ────────────────────────
-runtime_configs: []
-additional_stemcells: []
+  - name: bpm
+    type: bosh-release
+    path: resources/bpm-release.tgz
+
+  - name: routing
+    type: bosh-release
+    path: resources/routing-release.tgz

@@ -8,3 +8,4 @@ resources/*.tgz
 node_modules/
 src/tanzubench/
 src/tanzubench-server/vendor/
+release/

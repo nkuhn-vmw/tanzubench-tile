@@ -1,6 +1,23 @@
 #!/bin/bash
 set -euo pipefail
 
+# Install git at compile time (needed for aider + agentic fixtures)
+# Compile VM has internet; deploy VMs are air-gapped
+apt-get update -qq && apt-get install -y -qq git > /dev/null 2>&1 || true
+GIT_PATH=$(which git 2>/dev/null || echo "")
+if [ -n "$GIT_PATH" ]; then
+  mkdir -p "${BOSH_INSTALL_TARGET}/bin"
+  cp "$GIT_PATH" "${BOSH_INSTALL_TARGET}/bin/git"
+  # Also copy git-core helpers
+  GIT_CORE=$(git --exec-path 2>/dev/null || echo "/usr/lib/git-core")
+  if [ -d "$GIT_CORE" ]; then
+    cp -r "$GIT_CORE" "${BOSH_INSTALL_TARGET}/git-core"
+  fi
+  echo "Git installed: $(${BOSH_INSTALL_TARGET}/bin/git --version)"
+else
+  echo "WARNING: git not available at compile time"
+fi
+
 # Build the Go server
 export GOROOT="/var/vcap/packages/golang-1.22"
 export PATH="${GOROOT}/bin:${PATH}"

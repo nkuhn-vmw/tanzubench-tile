@@ -4,6 +4,9 @@ aider/aider-wheels.tar.gz:
 cf-cli/cf8-cli-linux64.tgz:
   size: 9588684
   sha: sha256:d7f5f24eea21cd5d585b8504005ead5a67a2e6e3edddd5b51a3d1e70f595ba46
+git/git-debs.tar.gz:
+  size: 27362
+  sha: sha256:b4f9ed126e9d75b673a3f6827371201f022cdb2b1d96d006d8cd6d453108c909
 golang/go1.22.12.linux-amd64.tar.gz:
   size: 68995422
   sha: sha256:4fa4f869b0f7fc6bb1eb2660e74657fbf04cdd290b5aef905585c86051b34d43

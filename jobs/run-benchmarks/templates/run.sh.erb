@@ -5,15 +5,13 @@ export PYTHONPATH="/var/vcap/packages/tanzubench:/var/vcap/packages/tanzubench/p
 
 # Python deps installed at BOSH compile time into python-lib/
 
-# BOSH director access for sysadmin tests (bosh_exec grader)
-<% if p('tanzubench.cf_system_domain') != '' %>
-export BOSH_ENVIRONMENT="<%= spec.director.hostname %>"
-export BOSH_CA_CERT="/var/vcap/jobs/run-benchmarks/config/bosh-ca.pem"
-export BOSH_CLIENT="<%= spec.director.uaa_client || 'ops_manager' %>"
-export BOSH_CLIENT_SECRET="<%= spec.director.uaa_client_secret || '' %>"
-<% end %>
+# BOSH director access for sysadmin tests — uses local VM fallback
+# (spec.director not available in tile-generator context)
 export PATH="/var/vcap/packages/tanzubench/bin:/var/vcap/packages/cf-cli/bin:/usr/bin:/usr/local/bin:$PATH"
 export GIT_EXEC_PATH="/usr/lib/git-core"
+export GIT_PYTHON_GIT_EXECUTABLE="/usr/bin/git"
+export HOME="/var/vcap/data/run-benchmarks"
+mkdir -p "$HOME"
 
 RESULTS_DIR="/var/vcap/store/tanzubench/results"
 CREDS_FILE="/var/vcap/jobs/run-benchmarks/config/genai-credentials.json"

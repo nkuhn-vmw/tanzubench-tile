@@ -103,3 +103,33 @@ cat > "$CREDS_FILE" <<EOF
 EOF
 
 echo "pre-start: credentials written to $CREDS_FILE (api_base=${API_BASE})"
+
+
+# ── Push leaderboard as a CF app for gorouter access ──────────────────
+STATIC_DIR="/var/vcap/packages/tanzubench/web/out"
+if [[ -d "$STATIC_DIR" ]] && command -v cf &>/dev/null; then
+  echo "pre-start: pushing leaderboard as CF app..."
+  
+  ROUTE_PREFIX="<%= p('tanzubench.leaderboard_route_prefix') %>"
+  
+  # Create a minimal manifest
+  cat > /tmp/tanzubench-manifest.yml <<MANIFEST
+---
+applications:
+  - name: ${ROUTE_PREFIX}
+    memory: 64M
+    disk_quota: 128M
+    instances: 1
+    buildpacks:
+      - staticfile_buildpack
+    path: ${STATIC_DIR}
+    env:
+      FORCE_HTTPS: "true"
+MANIFEST
+  
+  cf push -f /tmp/tanzubench-manifest.yml 2>&1 | tail -5 || {
+    echo "pre-start: WARNING — CF push failed (leaderboard accessible via VM IP:8080 instead)"
+  }
+  
+  echo "pre-start: leaderboard pushed to https://${ROUTE_PREFIX}.<%= p('tanzubench.cf_system_domain') %>/"
+fi

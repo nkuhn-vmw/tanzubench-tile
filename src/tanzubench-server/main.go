@@ -64,6 +64,7 @@ func main() {
 	http.HandleFunc("/api/results", handleResults(cfg))
 	http.HandleFunc("/api/run", handleRun(cfg))
 	http.HandleFunc("/api/export", handleExport(cfg))
+	http.HandleFunc("/api/upload", handleUpload(cfg))
 
 	// Dashboard UI (run trigger + status)
 	http.HandleFunc("/dashboard", handleDashboard)
@@ -306,4 +307,70 @@ func getBool(m map[string]interface{}, key string, def bool) bool {
 		}
 	}
 	return def
+}
+
+func handleUpload(cfg Config) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "POST" {
+			http.Error(w, "POST required", 405)
+			return
+		}
+		// Read the JSON body
+		body, err := io.ReadAll(io.LimitReader(r.Body, 10*1024*1024)) // 10MB max
+		if err != nil {
+			http.Error(w, "read error: "+err.Error(), 400)
+			return
+		}
+
+		// Parse to get a filename hint
+		var result map[string]interface{}
+		if err := json.Unmarshal(body, &result); err != nil {
+			http.Error(w, "invalid JSON: "+err.Error(), 400)
+			return
+		}
+
+		// Generate filename from target name + timestamp
+		targetName := "unknown"
+		if target, ok := result["target"].(map[string]interface{}); ok {
+			if name, ok := target["name"].(string); ok {
+				targetName = name
+			}
+		}
+		hw := "cpu"
+		if hardware, ok := result["hardware"].(map[string]interface{}); ok {
+			if gc, ok := hardware["gpu_count"].(float64); ok && gc > 0 {
+				hw = "gpu"
+			}
+		}
+
+		// Create hardware subdirectory
+		dir := filepath.Join(cfg.ResultsDir, hw)
+		os.MkdirAll(dir, 0755)
+
+		// Write file
+		slug := strings.Map(func(r rune) rune {
+			if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '.' {
+				return r
+			}
+			if r >= 'A' && r <= 'Z' {
+				return r + 32
+			}
+			return '-'
+		}, targetName)
+		ts := time.Now().UTC().Format("2006-01-02T15-04-05Z")
+		filename := fmt.Sprintf("%s-%s.json", slug, ts)
+		path := filepath.Join(dir, filename)
+
+		if err := os.WriteFile(path, body, 0644); err != nil {
+			http.Error(w, "write error: "+err.Error(), 500)
+			return
+		}
+
+		log.Printf("Result uploaded: %s (%d bytes)", path, len(body))
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]string{
+			"status": "uploaded",
+			"path":   path,
+		})
+	}
 }

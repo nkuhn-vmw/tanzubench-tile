@@ -6,19 +6,49 @@ echo "Export disabled in tile configuration"
 exit 0
 <% end %>
 
-RESULTS_DIR="/var/vcap/store/tanzubench/results"
-EXPORT_DIR="/var/vcap/store/tanzubench/exports"
+EXPORT_DIR="/tmp/tanzubench-exports"
 mkdir -p "$EXPORT_DIR"
 
 TIMESTAMP=$(date -u +%Y%m%d-%H%M%S)
 EXPORT_FILE="$EXPORT_DIR/tanzubench-export-${TIMESTAMP}.tar.gz"
 
-echo "Packaging results from $RESULTS_DIR..."
-tar -czf "$EXPORT_FILE" -C "$RESULTS_DIR" .
+# Download results from the web VM's API
+echo "Fetching results from web VM..."
+RESULTS_JSON=$(curl -s --max-time 30 "http://192.168.210.20:8080/api/results" || echo "null")
+
+if [ "$RESULTS_JSON" = "null" ] || [ -z "$RESULTS_JSON" ]; then
+  echo "No results available to export"
+  exit 0
+fi
+
+# Write each result to a temp dir then tar them
+TMPDIR=$(mktemp -d)
+echo "$RESULTS_JSON" | python3 -c "
+import sys, json, os
+results = json.load(sys.stdin)
+if not results:
+    print('No results')
+    sys.exit(0)
+for i, r in enumerate(results):
+    model = r.get('target', {}).get('name', 'unknown').replace('/', '-')
+    hw = 'gpu' if r.get('hardware', {}).get('gpu_count', 0) > 0 else 'cpu'
+    ts = r.get('meta', {}).get('timestamp', 'unknown')[:19].replace(':', '-')
+    fname = f'{model}-{ts}.json'
+    outdir = os.path.join('$TMPDIR', hw)
+    os.makedirs(outdir, exist_ok=True)
+    with open(os.path.join(outdir, fname), 'w') as f:
+        json.dump(r, f, indent=2)
+    print(f'  Exported: {hw}/{fname}')
+"
+
+tar -czf "$EXPORT_FILE" -C "$TMPDIR" .
+rm -rf "$TMPDIR"
+
+echo ""
 echo "Export created: $EXPORT_FILE"
 echo "Size: $(du -h "$EXPORT_FILE" | cut -f1)"
 echo ""
-echo "To upload to the central leaderboard:"
-echo "  1. bosh scp <instance>:$EXPORT_FILE ./tanzubench-export.tar.gz"
-echo "  2. cd tanzubench && tar -xzf tanzubench-export.tar.gz -C results/"
-echo "  3. python3 tools/validate.py results/ && git add results/ && git push"
+echo "To retrieve: bosh -d <deployment> scp export-results/0:$EXPORT_FILE ."
+echo "To upload to central leaderboard:"
+echo "  tar xzf tanzubench-export.tar.gz -C tanzubench/results/"
+echo "  cd tanzubench && python3 tools/validate.py results/ && git push"

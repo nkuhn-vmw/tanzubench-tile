@@ -103,7 +103,32 @@ run_bench() {
   python3 "${ARGS[@]}"
 
   echo ""
-  echo "=== Run complete at $(date -u) ==="
+  # Upload results to the web VM persistent disk
+WEB_URL="http://<%= spec.address %>:8080"
+# Find the web VM IP from the deployment
+WEB_IP=""
+for ip in $(getent hosts tanzubench-web 2>/dev/null | awk "{print \\}"); do
+  WEB_IP="$ip"
+  break
+done
+# Fallback: try the tile's known IP pattern
+if [[ -z "$WEB_IP" ]]; then
+  # Try to find the web VM by checking known IPs
+  for f in $RESULTS_DIR/*/*.json; do
+    if [[ -f "$f" ]]; then
+      echo "Uploading $f to web VM..."
+      # Try common web VM IPs on this network
+      for try_ip in 192.168.210.20 192.168.210.21; do
+        if curl -s --max-time 5 "http://${try_ip}:8080/api/status" >/dev/null 2>&1; then
+          curl -s -X POST "http://${try_ip}:8080/api/upload"             -H "Content-Type: application/json"             -d @"$f" 2>&1 | head -1
+          break
+        fi
+      done
+    fi
+  done
+fi
+
+echo "=== Run complete at $(date -u) ==="
   ls -la "$RESULTS_DIR/$hw/"
 }
 

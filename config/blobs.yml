@@ -1,6 +1,6 @@
 aider/aider-wheels.tar.gz:
-  size: 95304546
-  sha: sha256:3963eb98179153d6ea232adc8d878a8a92f98e734f0416e74eab2faca40c029d
+  size: 97042515
+  sha: sha256:880fcfd38818d88a7be5f2d40dd6ae44318e11070e91578b13940f7e7a5ea1cb
 cf-cli/cf8-cli-linux64.tgz:
   size: 9588684
   sha: sha256:d7f5f24eea21cd5d585b8504005ead5a67a2e6e3edddd5b51a3d1e70f595ba46

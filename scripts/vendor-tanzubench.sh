@@ -31,6 +31,11 @@ find "$TARGET/tests/agentic" -name "*.yaml" -exec sed -i.bak "s/frameworks: \[op
 find "$TARGET/tests/agentic" -name "*.bak" -delete
 echo "Stripped opencode from agentic frameworks"
 
+# Replace pip install pytest with PYTHONPATH setup (pytest is vendored)
+find "$TARGET/tests/agentic" -name "*.yaml" -exec sed -i.bak   "s|python3 -m pip install -q pytest|export PYTHONPATH=/var/vcap/packages/tanzubench/python-lib:\$PYTHONPATH 2>/dev/null || true|" {} \;
+find "$TARGET/tests/agentic" -name "*.bak" -delete
+echo "Replaced pip install with PYTHONPATH setup in agentic tests"
+
 echo "Vendoring Python dependencies..."
 pip download jsonschema pyyaml -d "$TARGET/python-deps/" --no-deps 2>/dev/null || true
 

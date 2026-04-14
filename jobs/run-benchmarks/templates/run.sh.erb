@@ -2,8 +2,11 @@
 set -euo pipefail
 
 export PYTHONPATH="/var/vcap/packages/tanzubench:/var/vcap/packages/tanzubench/python-lib"
+export PIP_DISABLE_PIP_VERSION_CHECK=1
 
 # Python deps installed at BOSH compile time into python-lib/
+# Make pytest available as a command (vendored in python-lib/)
+alias pytest="python3 -m pytest" 2>/dev/null || true
 
 # BOSH director access for sysadmin tests — uses local VM fallback
 # (spec.director not available in tile-generator context)
